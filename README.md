@@ -47,7 +47,7 @@ Construir un sistema web **sencillo** que permita **gestionar el catálogo** de 
     ├── navbar.html
     └── styles.css
 ```
-## 4) Base de datos (simple y suficiente)
+## 2) Base de datos (simple y suficiente)
 
 Ejecutar `db/schema.sql`:
 
