@@ -113,5 +113,28 @@ FLUSH PRIVILEGES;
 * `POST /api/instrumentos/upload` 
 * `GET /api/instrumentos/download`
 
+---
 
+### Paso 1: Crear el servidor y la página web básica
+
+1. **Crea la estructura de archivos**:
+
+   - Crea una carpeta para tu proyecto llamada `mini-hackaton-lab`.
+   - Dentro de esta carpeta, crea un archivo llamado `server.js`.
+   - Crea otra carpeta llamada `public` y dentro de ella, un archivo llamado `
+     index.html,
+     login.html,
+     instrumentos.html,
+     prestamos.html (opcional),
+     busqueda.html,
+     navbar.html,
+     styles.css`.
+
+2. **`nodemon.json` (simple)**:
+
+ - Crea un archivo nuevo llamado `nodemon.json` y agrega.
+   
+```json
+{ "watch": ["server.js", "public"], "exec": "node server.js" }
+```
 
