@@ -1,6 +1,6 @@
 # Examen-U-3
 
-# 🧪 Mini Hackatón U3 — Sistema Web para Préstamo de Instrumentos de Laboratorio
+# 🧪 Mini Hackatón — Sistema Web para Préstamo de Instrumentos de Laboratorio
 
 Aplicación web sencilla para gestionar instrumentos de laboratorio con:
 - Login / Logout con bcrypt  
@@ -130,7 +130,7 @@ FLUSH PRIVILEGES;
      navbar.html,
      styles.css`.
 
-2. **`nodemon.json` (simple)**:
+2. ### `nodemon.json` (simple)
 
  - Crea un archivo nuevo llamado `nodemon.json` y agrega.
    
@@ -138,3 +138,12 @@ FLUSH PRIVILEGES;
 { "watch": ["server.js", "public"], "exec": "node server.js" }
 ```
 
+3. ### `.env.example`
+
+ - Crea un archivo nuevo llamado `.env.example` y agrega.
+   
+```env
+PORT=3000
+DB_HOST=localhost
+DB_USER=lab_user
+DB_PASS=lab_pass
