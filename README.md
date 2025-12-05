@@ -11,16 +11,14 @@ Aplicación web sencilla para gestionar instrumentos de laboratorio con:
 - UI con Bootstrap  
 
 ---
-# Examen-U-3
 
 **Sistema Web para Préstamo de Instrumentos de Laboratorio**
 (autenticación, roles, búsqueda en vivo, Excel, `.env`, `nodemon`, Bootstrap, Live Share y GitHub)
 
-## 1) Objetivo (claro y directo)
+## 1) Objetivo 
 
 Construir un sistema web **sencillo** que permita **gestionar el catálogo** de instrumentos y **registrar préstamos** básicos. Debe incluir **login**, **roles**, **CRUD de instrumentos**, **búsqueda en vivo** y **carga/descarga** de datos en **Excel**.
 
-**Nota:** Aunque el tema del mini hackatón es *Préstamo de Instrumentos y Kits de Laboratorio* PUEDEN PROPONER UN TEMA DIFERENTE y deberá ser aprobado.
 
 ---
 
