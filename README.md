@@ -20,8 +20,17 @@ Aplicación web sencilla para gestionar instrumentos de laboratorio con:
 Construir un sistema web **sencillo** que permita **gestionar el catálogo** de instrumentos y **registrar préstamos** básicos. Debe incluir **login**, **roles**, **CRUD de instrumentos**, **búsqueda en vivo** y **carga/descarga** de datos en **Excel**.
 
 ### Requisitos:
-- Tener instalado Node.js y MySQL.
+- Tener instalado MySQL.
 - Tener un editor de código (VSCode recomendado).
+
+
+ 
+### Dependencias
+
+```
+npm i express mysql2 dotenv bcrypt multer xlsx
+npm i -D nodemon
+```
 
 ---
 
