@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Búsqueda de Instrumentos</title>
+    
+    <!-- Bootstrap 5.3 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    
+    <style>
+        body { padding-top: 70px; }
+        .card { margin-bottom: 20px; }
+        .search-box { margin-bottom: 30px; }
+    </style>
+</head>
+<body>
+  
+   <!-- En la navbar (después de la marca y antes del usuario) -->
+<nav class="navbar navbar-dark bg-primary fixed-top">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="#">
+            <i class="bi bi-search"></i> Búsqueda de Instrumentos
+        </a>
+        
+        <!-- BOTÓN DE REGRESO - AGREGAR ESTO -->
+        <div>
+            <a href="/" class="btn btn-outline-light btn-sm me-3">
+                <i class="bi bi-house-door"></i> Menú Principal
+            </a>
+            
+            <span class="text-light me-3" id="userName">Usuario</span>
+            <a href="/logout" class="btn btn-sm btn-outline-light">Salir</a>
+        </div>
+    </div>
+</nav>
+
+    <div class="container mt-4">
+        <h1 class="mb-4">Búsqueda de Instrumentos del Laboratorio</h1>
+        
+        <!-- Barra de búsqueda simple -->
+        <div class="card search-box">
+            <div class="card-body">
+                <h5 class="card-title">¿Qué instrumento buscas?</h5>
+                <div class="input-group">
+                    <input type="text" class="form-control" id="searchInput" 
+                           placeholder="Escribe el nombre, categoría o ubicación...">
+                    <button class="btn btn-primary" onclick="searchInstruments()">
+                        <i class="bi bi-search"></i> Buscar
+                    </button>
+                </div>
+                <div class="mt-2">
+                    <small class="text-muted">Ejemplos: "microscopio", "disponible", "laboratorio"</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Resultados -->
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Resultados</h5>
+                <span class="badge bg-primary" id="resultCount">0</span>
+            </div>
+            <div class="card-body">
+                <!-- Loading -->
+                <div id="loading" class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Cargando...</span>
+                    </div>
+                    <p class="mt-2">Cargando instrumentos...</p>
+                </div>
+                
+                <!-- Resultados -->
+                <div id="resultsContainer" style="display: none;">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Nombre</th>
+                                    <th>Categoría</th>
+                                    <th>Estado</th>
+                                    <th>Ubicación</th>
+                                </tr>
+                            </thead>
+                            <tbody id="resultsTable">
+                                <!-- Los resultados se cargarán aquí -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <!-- Sin resultados -->
+                <div id="noResults" class="text-center py-5" style="display: none;">
+                    <i class="bi bi-search display-1 text-muted mb-3"></i>
+                    <h4 class="text-muted">No se encontraron instrumentos</h4>
+                    <p class="text-muted">Intenta con otros términos de búsqueda</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Información de debug -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5 class="mb-0">Información de diagnóstico</h5>
+            </div>
+            <div class="card-body">
+                <button class="btn btn-sm btn-info" onclick="testConnection()">
+                    <i class="bi bi-wifi"></i> Probar conexión con el servidor
+                </button>
+                <div id="debugInfo" class="mt-2 small"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Variables globales
+        let allInstruments = [];
+        
+        // Cuando la página se carga
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 Página de búsqueda cargada');
+            
+            // Cargar información del usuario
+            loadUserInfo();
+            
+            // Cargar todos los instrumentos
+            loadInstruments();
+            
+            // Configurar búsqueda al presionar Enter
+            document.getElementById('searchInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    searchInstruments();
+                }
+            });
+        });
+        
+        // Cargar información del usuario
+        async function loadUserInfo() {
+            try {
+                const response = await fetch('/api/usuario-actual');
+                if (response.ok) {
+                    const user = await response.json();
+                    document.getElementById('userName').textContent = user.nombre || 'Usuario';
+                }
+            } catch (error) {
+                console.log('No se pudo cargar información del usuario:', error);
+            }
+        }
+        
+        // Cargar todos los instrumentos
+        async function loadInstruments() {
+            console.log('🔄 Iniciando carga de instrumentos...');
+            showLoading();
+            
+            try {
+                // Primero intentar con la ruta principal
+                console.log('📡 Intentando conectar a /api/instrumentos/buscar...');
+                const response = await fetch('/api/instrumentos/buscar?q=');
+                
+                if (!response.ok) {
+                    throw new Error(`Error HTTP: ${response.status}`);
+                }
+                
+                allInstruments = await response.json();
+                console.log(`✅ Cargados ${allInstruments.length} instrumentos`);
+                console.log('📋 Instrumentos:', allInstruments);
+                
+                // Mostrar resultados
+                displayResults(allInstruments);
+                hideLoading();
+                
+            } catch (error) {
+                console.error('❌ Error cargando instrumentos:', error);
+                
+                // Intentar con ruta alternativa
+                try {
+                    console.log('📡 Intentando ruta alternativa /api/instrumentos-test...');
+                    const testResponse = await fetch('/api/instrumentos-test');
+                    
+                    if (testResponse.ok) {
+                        allInstruments = await testResponse.json();
+                        console.log(`✅ Cargados ${allInstruments.length} instrumentos desde ruta alternativa`);
+                        displayResults(allInstruments);
+                    } else {
+                        throw new Error('Ruta alternativa también falló');
+                    }
+                    
+                } catch (secondError) {
+                    console.error('❌ Ambas rutas fallaron:', secondError);
+                    
+                    // Mostrar mensaje de error amigable
+                    document.getElementById('loading').innerHTML = `
+                        <div class="alert alert-danger">
+                            <h5>Error de conexión</h5>
+                            <p>No se pudo conectar con el servidor. Verifica que:</p>
+                            <ul>
+                                <li>El servidor esté corriendo (node server.js)</li>
+                                <li>La base de datos esté conectada</li>
+                                <li>Estés autenticado correctamente</li>
+                            </ul>
+                            <button class="btn btn-primary" onclick="location.reload()">Reintentar</button>
+                        </div>
+                    `;
+                }
+                
+                hideLoading();
+            }
+        }
+        
+        // Buscar instrumentos
+        function searchInstruments() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
+            
+            if (!searchTerm) {
+                // Si no hay término, mostrar todos
+                displayResults(allInstruments);
+                return;
+            }
+            
+            // Filtrar instrumentos
+            const filtered = allInstruments.filter(instrument => {
+                return (
+                    (instrument.nombre && instrument.nombre.toLowerCase().includes(searchTerm)) ||
+                    (instrument.categoria && instrument.categoria.toLowerCase().includes(searchTerm)) ||
+                    (instrument.ubicacion && instrument.ubicacion.toLowerCase().includes(searchTerm)) ||
+                    (instrument.estado && instrument.estado.toLowerCase().includes(searchTerm))
+                );
+            });
+            
+            displayResults(filtered);
+        }
+        
+        // Mostrar resultados
+        function displayResults(instruments) {
+            const resultsTable = document.getElementById('resultsTable');
+            const resultsContainer = document.getElementById('resultsContainer');
+            const noResults = document.getElementById('noResults');
+            const resultCount = document.getElementById('resultCount');
+            
+            // Actualizar contador
+            resultCount.textContent = instruments.length;
+            
+            if (instruments.length === 0) {
+                resultsContainer.style.display = 'none';
+                noResults.style.display = 'block';
+                return;
+            }
+            
+            noResults.style.display = 'none';
+            resultsContainer.style.display = 'block';
+            
+            // Limpiar tabla
+            resultsTable.innerHTML = '';
+            
+            // Agregar filas
+            instruments.forEach(instrument => {
+                const row = document.createElement('tr');
+                
+                // Determinar clase de estado
+                let estadoClass = '';
+                let estadoIcon = '';
+                switch(instrument.estado) {
+                    case 'DISPONIBLE':
+                        estadoClass = 'success';
+                        estadoIcon = 'bi-check-circle';
+                        break;
+                    case 'PRESTADO':
+                        estadoClass = 'warning';
+                        estadoIcon = 'bi-arrow-left-right';
+                        break;
+                    case 'MANTENIMIENTO':
+                        estadoClass = 'danger';
+                        estadoIcon = 'bi-wrench';
+                        break;
+                    default:
+                        estadoClass = 'secondary';
+                        estadoIcon = 'bi-question-circle';
+                }
+                
+                row.innerHTML = `
+                    <td>${instrument.id || ''}</td>
+                    <td><strong>${instrument.nombre || 'Sin nombre'}</strong></td>
+                    <td>${instrument.categoria || 'Sin categoría'}</td>
+                    <td>
+                        <span class="badge bg-${estadoClass}">
+                            <i class="bi ${estadoIcon} me-1"></i>
+                            ${instrument.estado || 'Desconocido'}
+                        </span>
+                    </td>
+                    <td>${instrument.ubicacion || 'Sin ubicación'}</td>
+                `;
+                
+                resultsTable.appendChild(row);
+            });
+        }
+        
+        // Mostrar loading
+        function showLoading() {
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('resultsContainer').style.display = 'none';
+            document.getElementById('noResults').style.display = 'none';
+        }
+        
+        // Ocultar loading
+        function hideLoading() {
+            document.getElementById('loading').style.display = 'none';
+        }
+        
+        // Probar conexión
+        async function testConnection() {
+            const debugInfo = document.getElementById('debugInfo');
+            debugInfo.innerHTML = '<div class="spinner-border spinner-border-sm"></div> Probando conexión...';
+            
+            try {
+                // Probar varias rutas
+                const tests = [
+                    { name: 'API Principal', url: '/api/instrumentos/buscar?q=' },
+                    { name: 'API Alternativa', url: '/api/instrumentos-test' },
+                    { name: 'Usuario Actual', url: '/api/usuario-actual' }
+                ];
+                
+                let results = [];
+                
+                for (const test of tests) {
+                    try {
+                        const startTime = Date.now();
+                        const response = await fetch(test.url);
+                        const endTime = Date.now();
+                        
+                        results.push(`
+                            <div class="mb-1">
+                                <strong>${test.name}:</strong>
+                                <span class="badge bg-${response.ok ? 'success' : 'danger'}">
+                                    ${response.ok ? 'OK' : 'ERROR'} (${endTime - startTime}ms)
+                                </span>
+                                ${!response.ok ? ` - ${response.status}` : ''}
+                            </div>
+                        `);
+                    } catch (error) {
+                        results.push(`
+                            <div class="mb-1">
+                                <strong>${test.name}:</strong>
+                                <span class="badge bg-danger">ERROR</span>
+                                - ${error.message}
+                            </div>
+                        `);
+                    }
+                }
+                
+                debugInfo.innerHTML = results.join('');
+                
+            } catch (error) {
+                debugInfo.innerHTML = `<div class="text-danger">Error: ${error.message}</div>`;
+            }
+        }
+        
+        // Función simple para mostrar alertas
+        function showAlert(message, type = 'info') {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+            alertDiv.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            
+            document.querySelector('.container').prepend(alertDiv);
+            
+            setTimeout(() => {
+                alertDiv.remove();
+            }, 5000);
+        }
+    </script>
+</body>
+</html>

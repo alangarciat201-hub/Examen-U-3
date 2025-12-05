@@ -1,0 +1,1355 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Instrumentos - Sistema Laboratorio</title>
+    
+    <!-- Bootstrap 5.3 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    
+    <!-- CSS Personalizado -->
+    <link rel="stylesheet" href="/css/styles.css">
+    
+    <style>
+        .instrument-card {
+            transition: all 0.3s ease;
+            border: 1px solid #e3e6f0;
+        }
+        
+        .instrument-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.1);
+        }
+        
+        .status-badge {
+            padding: 0.5em 1em;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+        
+        .status-available {
+            background-color: #d1f7e5;
+            color: #0a8f6b;
+        }
+        
+        .status-borrowed {
+            background-color: #fff4e5;
+            color: #e67700;
+        }
+        
+        .status-maintenance {
+            background-color: #ffe5e5;
+            color: #e63946;
+        }
+        
+        .action-buttons .btn {
+            padding: 0.375rem 0.75rem;
+            margin: 0 0.125rem;
+        }
+        
+        .filter-tabs .nav-link {
+            border-radius: 0.5rem 0.5rem 0 0;
+            font-weight: 500;
+        }
+        
+        .filter-tabs .nav-link.active {
+            background-color: #4e73df;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-custom navbar-dark fixed-top">
+        <div class="container-fluid">
+            <a class="navbar-brand fw-bold" href="/">
+                <i class="bi bi-tools me-2"></i>
+                Gestión de Instrumentos
+            </a>
+            
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarInstruments">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="navbarInstruments">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">
+                            <i class="bi bi-house me-1"></i> Inicio
+                        </a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" data-bs-toggle="dropdown">
+                            <i class="bi bi-person-circle me-2"></i>
+                            <span id="userName">Usuario</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-person me-2"></i>Mi Perfil</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item text-danger" href="/logout"><i class="bi bi-box-arrow-right me-2"></i>Cerrar Sesión</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Contenido Principal -->
+    <div class="container-fluid mt-5 pt-4">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-3 col-lg-2 d-md-block sidebar bg-light p-3" style="min-height: calc(100vh - 73px);">
+                <div class="position-sticky">
+                    <div class="text-center mb-4">
+                        <div class="bg-primary rounded-circle p-3 d-inline-block">
+                            <i class="bi bi-tools text-white fs-2"></i>
+                        </div>
+                        <h5 class="mt-3">Instrumentos</h5>
+                    </div>
+                    
+                    <ul class="nav flex-column">
+                        <li class="nav-item mb-2">
+                            <a class="nav-link active" href="/instrumentos.html">
+                                <i class="bi bi-grid me-2"></i>
+                                Vista General
+                            </a>
+                        </li>
+                        <li class="nav-item mb-2">
+                            <a class="nav-link" href="#modalAgregar" data-bs-toggle="modal">
+                                <i class="bi bi-plus-circle me-2"></i>
+                                Agregar Nuevo
+                            </a>
+                        </li>
+                        <li class="nav-item mb-2">
+                            <a class="nav-link" href="/busqueda.html">
+                                <i class="bi bi-search me-2"></i>
+                                Búsqueda Avanzada
+                            </a>
+                        </li>
+                        <li class="nav-item mb-2">
+                            <a class="nav-link" href="/prestamos.html">
+                                <i class="bi bi-arrow-left-right me-2"></i>
+                                Préstamos
+                            </a>
+                        </li>
+                        <li class="nav-item mb-2">
+                            <a class="nav-link" href="#" onclick="descargarExcel()">
+                                <i class="bi bi-download me-2"></i>
+                                Exportar Excel
+                            </a>
+                        </li>
+                    </ul>
+                    
+                    <!-- Filtros -->
+                    <div class="mt-4 pt-3 border-top">
+                        <h6 class="text-muted mb-3"><i class="bi bi-funnel me-2"></i>Filtrar por:</h6>
+                        
+                        <div class="mb-3">
+                            <label class="form-label small text-muted mb-2">Estado</label>
+                            <div class="btn-group w-100" role="group">
+                                <button type="button" class="btn btn-outline-primary btn-sm active" onclick="filterInstruments('all')">
+                                    Todos
+                                </button>
+                                <button type="button" class="btn btn-outline-success btn-sm" onclick="filterInstruments('DISPONIBLE')">
+                                    <i class="bi bi-check-circle"></i>
+                                </button>
+                                <button type="button" class="btn btn-outline-warning btn-sm" onclick="filterInstruments('PRESTADO')">
+                                    <i class="bi bi-arrow-left-right"></i>
+                                </button>
+                                <button type="button" class="btn btn-outline-danger btn-sm" onclick="filterInstruments('MANTENIMIENTO')">
+                                    <i class="bi bi-wrench"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label small text-muted mb-2">Categoría</label>
+                            <select class="form-select form-select-sm" id="filterCategory" onchange="filterByCategory()">
+                                <option value="">Todas las categorías</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label small text-muted mb-2">Ubicación</label>
+                            <select class="form-select form-select-sm" id="filterLocation" onchange="filterByLocation()">
+                                <option value="">Todas las ubicaciones</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Contenido Principal -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+                <!-- Header con acciones -->
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <div>
+                        <h1 class="h2"><i class="bi bi-tools me-2"></i>Gestión de Instrumentos</h1>
+                        <p class="text-muted mb-0">Administra todos los instrumentos del laboratorio</p>
+                    </div>
+                    <div class="btn-toolbar mb-2 mb-md-0">
+                        <div class="btn-group me-2">
+                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="refreshTable()">
+                                <i class="bi bi-arrow-clockwise"></i> Actualizar
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalImportar">
+                                <i class="bi bi-upload me-1"></i> Importar
+                            </button>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#modalAgregar">
+                            <i class="bi bi-plus-circle me-1"></i> Nuevo Instrumento
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Estadísticas Rápidas -->
+                <div class="row mb-4">
+                    <div class="col-xl-3 col-md-6 mb-4">
+                        <div class="card border-start border-primary border-4 shadow h-100 py-2">
+                            <div class="card-body">
+                                <div class="row no-gutters align-items-center">
+                                    <div class="col mr-2">
+                                        <div class="text-xs fw-bold text-primary text-uppercase mb-1">
+                                            Total Instrumentos
+                                        </div>
+                                        <div class="h5 mb-0 fw-bold text-gray-800" id="totalCount">0</div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="bi bi-tools fa-2x text-gray-300"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-xl-3 col-md-6 mb-4">
+                        <div class="card border-start border-success border-4 shadow h-100 py-2">
+                            <div class="card-body">
+                                <div class="row no-gutters align-items-center">
+                                    <div class="col mr-2">
+                                        <div class="text-xs fw-bold text-success text-uppercase mb-1">
+                                            Disponibles
+                                        </div>
+                                        <div class="h5 mb-0 fw-bold text-gray-800" id="availableCount">0</div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="bi bi-check-circle fa-2x text-gray-300"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-xl-3 col-md-6 mb-4">
+                        <div class="card border-start border-warning border-4 shadow h-100 py-2">
+                            <div class="card-body">
+                                <div class="row no-gutters align-items-center">
+                                    <div class="col mr-2">
+                                        <div class="text-xs fw-bold text-warning text-uppercase mb-1">
+                                            Prestados
+                                        </div>
+                                        <div class="h5 mb-0 fw-bold text-gray-800" id="borrowedCount">0</div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="bi bi-arrow-left-right fa-2x text-gray-300"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-xl-3 col-md-6 mb-4">
+                        <div class="card border-start border-danger border-4 shadow h-100 py-2">
+                            <div class="card-body">
+                                <div class="row no-gutters align-items-center">
+                                    <div class="col mr-2">
+                                        <div class="text-xs fw-bold text-danger text-uppercase mb-1">
+                                            Mantenimiento
+                                        </div>
+                                        <div class="h5 mb-0 fw-bold text-gray-800" id="maintenanceCount">0</div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="bi bi-wrench fa-2x text-gray-300"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tabs de Filtros -->
+                <ul class="nav nav-tabs filter-tabs mb-4" id="myTab" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="all-tab" data-bs-toggle="tab" data-bs-target="#all" type="button" role="tab">
+                            <i class="bi bi-grid me-1"></i> Todos
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="available-tab" data-bs-toggle="tab" data-bs-target="#available" type="button" role="tab">
+                            <i class="bi bi-check-circle me-1"></i> Disponibles
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="borrowed-tab" data-bs-toggle="tab" data-bs-target="#borrowed" type="button" role="tab">
+                            <i class="bi bi-arrow-left-right me-1"></i> Prestados
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="maintenance-tab" data-bs-toggle="tab" data-bs-target="#maintenance" type="button" role="tab">
+                            <i class="bi bi-wrench me-1"></i> Mantenimiento
+                        </button>
+                    </li>
+                </ul>
+
+                <!-- Contenido de los Tabs -->
+                <div class="tab-content" id="myTabContent">
+                    <!-- Tab Todos -->
+                    <div class="tab-pane fade show active" id="all" role="tabpanel">
+                        <div class="card shadow mb-4">
+                            <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                                <h6 class="m-0 fw-bold text-primary">Todos los Instrumentos</h6>
+                                <div class="input-group" style="width: 300px;">
+                                    <input type="text" class="form-control" placeholder="Buscar instrumento..." id="searchInput" onkeyup="searchInstruments()">
+                                    <button class="btn btn-outline-primary" type="button">
+                                        <i class="bi bi-search"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-hover table-bordered" id="instrumentosTable">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>ID</th>
+                                                <th>Nombre</th>
+                                                <th>Categoría</th>
+                                                <th>Estado</th>
+                                                <th>Ubicación</th>
+                                                <th>Fecha Registro</th>
+                                                <th>Acciones</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="tableBody">
+                                            <!-- Los datos se cargarán con JavaScript -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Tab Disponibles -->
+                    <div class="tab-pane fade" id="available" role="tabpanel">
+                        <div class="row" id="availableInstruments">
+                            <!-- Se cargarán con JavaScript -->
+                        </div>
+                    </div>
+                    
+                    <!-- Tab Prestados -->
+                    <div class="tab-pane fade" id="borrowed" role="tabpanel">
+                        <div class="row" id="borrowedInstruments">
+                            <!-- Se cargarán con JavaScript -->
+                        </div>
+                    </div>
+                    
+                    <!-- Tab Mantenimiento -->
+                    <div class="tab-pane fade" id="maintenance" role="tabpanel">
+                        <div class="row" id="maintenanceInstruments">
+                            <!-- Se cargarán con JavaScript -->
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Modal para Agregar Instrumento -->
+    <div class="modal fade" id="modalAgregar" tabindex="-1" aria-labelledby="modalAgregarLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="modalAgregarLabel">
+                        <i class="bi bi-plus-circle me-2"></i>Agregar Nuevo Instrumento
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="formAgregarInstrumento" onsubmit="return agregarInstrumento(event)">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="nombre" class="form-label">Nombre del Instrumento *</label>
+                                <input type="text" class="form-control" id="nombre" required placeholder="Ej: Microscopio Óptico">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="categoria" class="form-label">Categoría *</label>
+                                <select class="form-select" id="categoria" required>
+                                    <option value="">Seleccionar categoría</option>
+                                    <option value="Óptico">Óptico</option>
+                                    <option value="Electrónico">Electrónico</option>
+                                    <option value="Mecánico">Mecánico</option>
+                                    <option value="Químico">Químico</option>
+                                    <option value="Biológico">Biológico</option>
+                                    <option value="Medición">Medición</option>
+                                    <option value="Diagnóstico">Diagnóstico</option>
+                                    <option value="Otro">Otro</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="estado" class="form-label">Estado *</label>
+                                <select class="form-select" id="estado" required>
+                                    <option value="">Seleccionar estado</option>
+                                    <option value="DISPONIBLE">DISPONIBLE</option>
+                                    <option value="PRESTADO">PRESTADO</option>
+                                    <option value="MANTENIMIENTO">MANTENIMIENTO</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="ubicacion" class="form-label">Ubicación *</label>
+                                <input type="text" class="form-control" id="ubicacion" required placeholder="Ej: Laboratorio A, Estante 3">
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="descripcion" class="form-label">Descripción</label>
+                            <textarea class="form-control" id="descripcion" rows="3" placeholder="Descripción detallada del instrumento..."></textarea>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="marca" class="form-label">Marca</label>
+                                <input type="text" class="form-control" id="marca" placeholder="Marca del instrumento">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="modelo" class="form-label">Modelo/Serial</label>
+                                <input type="text" class="form-control" id="modelo" placeholder="Número de modelo o serial">
+                            </div>
+                        </div>
+                        
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle me-2"></i>
+                            Los campos marcados con * son obligatorios.
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" form="formAgregarInstrumento" class="btn btn-primary">
+                        <i class="bi bi-check-circle me-2"></i>Guardar Instrumento
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Importar Excel -->
+    <div class="modal fade" id="modalImportar" tabindex="-1" aria-labelledby="modalImportarLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-info text-white">
+                    <h5 class="modal-title" id="modalImportarLabel">
+                        <i class="bi bi-upload me-2"></i>Importar desde Excel
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="formImportarExcel" enctype="multipart/form-data">
+                        <div class="mb-3">
+                            <label for="excelFile" class="form-label">Seleccionar archivo Excel</label>
+                            <input class="form-control" type="file" id="excelFile" accept=".xlsx,.xls" required>
+                            <div class="form-text">Formatos aceptados: .xlsx, .xls</div>
+                        </div>
+                        
+                        <div class="alert alert-warning">
+                            <i class="bi bi-exclamation-triangle me-2"></i>
+                            <strong>Importante:</strong> El archivo debe tener las columnas: Nombre, Categoría, Estado, Ubicación
+                        </div>
+                        
+                        <div class="text-center">
+                            <a href="/plantilla_instrumentos.xlsx" class="btn btn-outline-primary btn-sm">
+                                <i class="bi bi-download me-1"></i>Descargar Plantilla
+                            </a>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" form="formImportarExcel" class="btn btn-info text-white">
+                        <i class="bi bi-upload me-2"></i>Importar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Editar Instrumento -->
+<!-- Modal para Editar Instrumento -->
+<div class="modal fade" id="modalEditar" tabindex="-1" aria-labelledby="modalEditarLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-white">
+                <h5 class="modal-title" id="modalEditarLabel">
+                    <i class="bi bi-pencil me-2"></i>Editar Instrumento
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- IMPORTANTE: Este div debe tener id="formEditarInstrumento" -->
+                <form id="formEditarInstrumento">
+                    <input type="hidden" id="editId">
+                    <!-- Los campos se llenarán dinámicamente con JavaScript -->
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-warning text-white" onclick="actualizarInstrumento()" id="btnGuardarCambios">
+                    <i class="bi bi-save me-2"></i>Guardar Cambios
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+    <!-- Bootstrap JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        let allInstruments = [];
+        let currentUserRole = '';
+        
+        // Cargar información del usuario y datos iniciales
+        document.addEventListener('DOMContentLoaded', function() {
+            loadUserInfo();
+            loadInstruments();
+            
+            // Configurar el formulario de importación
+            document.getElementById('formImportarExcel').addEventListener('submit', function(e) {
+                e.preventDefault();
+                importarExcel();
+            });
+        });
+        
+        // Cargar información del usuario
+        async function loadUserInfo() {
+            try {
+                const response = await fetch('/api/usuario-actual');
+                if (!response.ok) {
+                    window.location.href = '/login.html';
+                    return;
+                }
+                const user = await response.json();
+                document.getElementById('userName').textContent = user.nombre || 'Usuario';
+                currentUserRole = user.tipo_usuario || '';
+            } catch (error) {
+                console.error('Error cargando información del usuario:', error);
+                window.location.href = '/login.html';
+            }
+        }
+        
+        // Cargar todos los instrumentos
+        async function loadInstruments() {
+            try {
+                const response = await fetch('/api/instrumentos/buscar?q=');
+                if (!response.ok) throw new Error('Error en la respuesta');
+                
+                allInstruments = await response.json();
+                updateStats();
+                renderTable(allInstruments);
+                renderCards();
+                populateFilters();
+            } catch (error) {
+                console.error('Error cargando instrumentos:', error);
+                showAlert('Error al cargar los instrumentos', 'danger');
+            }
+        }
+        
+        // Actualizar estadísticas
+        function updateStats() {
+            const total = allInstruments.length;
+            const available = allInstruments.filter(i => i.estado === 'DISPONIBLE').length;
+            const borrowed = allInstruments.filter(i => i.estado === 'PRESTADO').length;
+            const maintenance = allInstruments.filter(i => i.estado === 'MANTENIMIENTO').length;
+            
+            document.getElementById('totalCount').textContent = total;
+            document.getElementById('availableCount').textContent = available;
+            document.getElementById('borrowedCount').textContent = borrowed;
+            document.getElementById('maintenanceCount').textContent = maintenance;
+        }
+        
+        // Renderizar tabla con control de permisos por rol - VERSIÓN CORREGIDA
+// VERSIÓN SUPER SIMPLE - elimina todo el if/else complejo
+// Renderizar tabla con control de permisos por rol - VERSIÓN ORIGINAL CORREGIDA
+function renderTable(instruments) {
+    const tbody = document.getElementById('tableBody');
+    tbody.innerHTML = '';
+    
+    if (instruments.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="7" class="text-center py-4">
+                    <i class="bi bi-inbox display-4 text-muted"></i>
+                    <p class="mt-3 text-muted">No hay instrumentos registrados</p>
+                </td>
+            </tr>
+        `;
+        return;
+    }
+    
+    instruments.forEach(instrument => {
+        let statusClass = '';
+        let statusText = '';
+        switch(instrument.estado) {
+            case 'DISPONIBLE':
+                statusClass = 'status-available';
+                statusText = 'Disponible';
+                break;
+            case 'PRESTADO':
+                statusClass = 'status-borrowed';
+                statusText = 'Prestado';
+                break;
+            case 'MANTENIMIENTO':
+                statusClass = 'status-maintenance';
+                statusText = 'Mantenimiento';
+                break;
+        }
+        
+        const row = document.createElement('tr');
+        
+        let accionesHTML = '';
+        
+        if (currentUserRole === 'ADMIN') {
+            accionesHTML = `
+                <button class="btn btn-sm btn-outline-primary" onclick="viewInstrument(${instrument.id})" title="Ver">
+                    <i class="bi bi-eye"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-warning" onclick="editInstrument(${instrument.id})" title="Editar">
+                    <i class="bi bi-pencil"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-danger" onclick="deleteInstrument(${instrument.id})" title="Eliminar">
+                    <i class="bi bi-trash"></i>
+                </button>
+            `;
+        } else if (currentUserRole === 'ASISTENTE') {
+            accionesHTML = `
+                <button class="btn btn-sm btn-outline-primary" onclick="viewInstrument(${instrument.id})" title="Ver">
+                    <i class="bi bi-eye"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-warning" onclick="editInstrument(${instrument.id})" title="Editar">
+                    <i class="bi bi-pencil"></i>
+                </button>
+            `;
+        } else if (currentUserRole === 'AUDITOR') {
+            accionesHTML = `
+                <button class="btn btn-sm btn-outline-primary" onclick="viewInstrument(${instrument.id})" title="Ver">
+                    <i class="bi bi-eye"></i>
+                </button>
+            `;
+        }
+        
+        row.innerHTML = `
+            <td class="fw-bold">${instrument.id}</td>
+            <td>
+                <strong>${instrument.nombre}</strong>
+                ${instrument.marca ? `<br><small class="text-muted">${instrument.marca}</small>` : ''}
+            </td>
+            <td>
+                <span class="badge bg-info">${instrument.categoria}</span>
+            </td>
+            <td>
+                <span class="status-badge ${statusClass}">${statusText}</span>
+            </td>
+            <td>${instrument.ubicacion}</td>
+            <td>${new Date().toLocaleDateString()}</td>
+            <td class="action-buttons">
+                ${accionesHTML}
+            </td>
+        `;
+        
+        tbody.appendChild(row);
+    });
+}
+
+        // Renderizar tarjetas para las vistas de tabs
+        function renderCards() {
+            renderCardSet('availableInstruments', 'DISPONIBLE');
+            renderCardSet('borrowedInstruments', 'PRESTADO');
+            renderCardSet('maintenanceInstruments', 'MANTENIMIENTO');
+        }
+        
+        function renderCardSet(containerId, estado) {
+            const container = document.getElementById(containerId);
+            const filtered = allInstruments.filter(i => i.estado === estado);
+            
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="col-12">
+                        <div class="alert alert-info text-center">
+                            <i class="bi bi-info-circle me-2"></i>
+                            No hay instrumentos ${estado.toLowerCase()}.
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+            
+            let cardsHTML = '';
+            filtered.forEach(instrument => {
+                let statusClass = '';
+                let statusIcon = '';
+                
+                switch(estado) {
+                    case 'DISPONIBLE':
+                        statusClass = 'border-success';
+                        statusIcon = 'bi-check-circle text-success';
+                        break;
+                    case 'PRESTADO':
+                        statusClass = 'border-warning';
+                        statusIcon = 'bi-arrow-left-right text-warning';
+                        break;
+                    case 'MANTENIMIENTO':
+                        statusClass = 'border-danger';
+                        statusIcon = 'bi-wrench text-danger';
+                        break;
+                }
+                
+                let botonesHTML = '';
+                
+                if (currentUserRole === 'ADMIN') {
+                    botonesHTML = `
+                        <button class="btn btn-sm btn-outline-primary" onclick="viewInstrument(${instrument.id})">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-warning" onclick="editInstrument(${instrument.id})">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteInstrument(${instrument.id})">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    `;
+                } else if (currentUserRole === 'ASISTENTE') {
+                    botonesHTML = `
+                        <button class="btn btn-sm btn-outline-primary" onclick="viewInstrument(${instrument.id})">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-warning" onclick="editInstrument(${instrument.id})">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                    `;
+                } else if (currentUserRole === 'AUDITOR') {
+                    botonesHTML = `
+                        <button class="btn btn-sm btn-outline-primary" onclick="viewInstrument(${instrument.id})">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                    `;
+                }
+                
+                cardsHTML += `
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card instrument-card h-100 ${statusClass}">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h6 class="mb-0"><i class="bi ${statusIcon} me-2"></i>${instrument.nombre}</h6>
+                                <span class="badge bg-secondary">#${instrument.id}</span>
+                            </div>
+                            <div class="card-body">
+                                <p class="card-text">
+                                    <strong>Categoría:</strong> ${instrument.categoria}<br>
+                                    <strong>Ubicación:</strong> ${instrument.ubicacion}<br>
+                                    ${instrument.descripcion ? `<strong>Descripción:</strong> ${instrument.descripcion.substring(0, 100)}...` : ''}
+                                </p>
+                            </div>
+                            <div class="card-footer bg-transparent">
+                                <div class="d-flex justify-content-between">
+                                    ${botonesHTML}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = cardsHTML;
+        }
+        
+        // Llenar filtros con opciones únicas
+        function populateFilters() {
+            const categories = [...new Set(allInstruments.map(i => i.categoria))];
+            const locations = [...new Set(allInstruments.map(i => i.ubicacion))];
+            
+            const categorySelect = document.getElementById('filterCategory');
+            const locationSelect = document.getElementById('filterLocation');
+            
+            // Limpiar opciones
+            while (categorySelect.options.length > 1) categorySelect.remove(1);
+            while (locationSelect.options.length > 1) locationSelect.remove(1);
+            
+            categories.forEach(cat => {
+                if (cat) {
+                    const option = document.createElement('option');
+                    option.value = cat;
+                    option.textContent = cat;
+                    categorySelect.appendChild(option);
+                }
+            });
+            
+            locations.forEach(loc => {
+                if (loc) {
+                    const option = document.createElement('option');
+                    option.value = loc;
+                    option.textContent = loc;
+                    locationSelect.appendChild(option);
+                }
+            });
+        }
+        
+        // Filtrar instrumentos
+        function filterInstruments(estado) {
+            if (estado === 'all') {
+                renderTable(allInstruments);
+            } else {
+                const filtered = allInstruments.filter(i => i.estado === estado);
+                renderTable(filtered);
+            }
+        }
+        
+        function filterByCategory() {
+            const category = document.getElementById('filterCategory').value;
+            if (!category) {
+                renderTable(allInstruments);
+                return;
+            }
+            
+            const filtered = allInstruments.filter(i => i.categoria === category);
+            renderTable(filtered);
+        }
+        
+        function filterByLocation() {
+            const location = document.getElementById('filterLocation').value;
+            if (!location) {
+                renderTable(allInstruments);
+                return;
+            }
+            
+            const filtered = allInstruments.filter(i => i.ubicacion === location);
+            renderTable(filtered);
+        }
+        
+        // Buscar instrumentos
+        function searchInstruments() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            if (!searchTerm) {
+                renderTable(allInstruments);
+                return;
+            }
+            
+            const filtered = allInstruments.filter(i => 
+                (i.nombre && i.nombre.toLowerCase().includes(searchTerm)) ||
+                (i.categoria && i.categoria.toLowerCase().includes(searchTerm)) ||
+                (i.ubicacion && i.ubicacion.toLowerCase().includes(searchTerm)) ||
+                (i.descripcion && i.descripcion.toLowerCase().includes(searchTerm))
+            );
+            
+            renderTable(filtered);
+        }
+        
+        // Agregar nuevo instrumento
+        async function agregarInstrumento(event) {
+            event.preventDefault();
+            
+            const instrumento = {
+                nombre: document.getElementById('nombre').value,
+                categoria: document.getElementById('categoria').value,
+                estado: document.getElementById('estado').value,
+                ubicacion: document.getElementById('ubicacion').value,
+                descripcion: document.getElementById('descripcion').value,
+                marca: document.getElementById('marca').value,
+                modelo: document.getElementById('modelo').value
+            };
+            
+            try {
+                const response = await fetch('/api/instrumentos', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(instrumento)
+                });
+                
+                if (response.ok) {
+                    showAlert('Instrumento agregado exitosamente', 'success');
+                    document.getElementById('formAgregarInstrumento').reset();
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('modalAgregar'));
+                    modal.hide();
+                    loadInstruments();
+                } else {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Error al agregar instrumento');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showAlert(error.message || 'Error al agregar instrumento', 'danger');
+            }
+        }
+        
+        // Ver instrumento
+        function viewInstrument(id) {
+            const instrument = allInstruments.find(i => i.id === id);
+            if (instrument) {
+                const modalHTML = `
+                    <div class="modal fade" id="modalVer${id}" tabindex="-1">
+                        <div class="modal-dialog modal-lg">
+                            <div class="modal-content">
+                                <div class="modal-header bg-info text-white">
+                                    <h5 class="modal-title">Detalles del Instrumento</h5>
+                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <div class="text-center">
+                                                <i class="bi bi-tools display-1 text-info"></i>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-8">
+                                            <h4>${instrument.nombre}</h4>
+                                            <hr>
+                                            <div class="row">
+                                                <div class="col-6">
+                                                    <p><strong>ID:</strong> ${instrument.id}</p>
+                                                    <p><strong>Categoría:</strong> ${instrument.categoria}</p>
+                                                    <p><strong>Estado:</strong> ${instrument.estado}</p>
+                                                    <p><strong>Ubicación:</strong> ${instrument.ubicacion}</p>
+                                                </div>
+                                                <div class="col-6">
+                                                    ${instrument.marca ? `<p><strong>Marca:</strong> ${instrument.marca}</p>` : ''}
+                                                    ${instrument.modelo ? `<p><strong>Modelo:</strong> ${instrument.modelo}</p>` : ''}
+                                                    <p><strong>Fecha Registro:</strong> ${new Date().toLocaleDateString()}</p>
+                                                </div>
+                                            </div>
+                                            ${instrument.descripcion ? `
+                                                <div class="mt-3">
+                                                    <strong>Descripción:</strong>
+                                                    <p class="mt-2">${instrument.descripcion}</p>
+                                                </div>
+                                            ` : ''}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                const modalContainer = document.createElement('div');
+                modalContainer.innerHTML = modalHTML;
+                document.body.appendChild(modalContainer);
+                
+                const modalElement = document.getElementById(`modalVer${id}`);
+                const modal = new bootstrap.Modal(modalElement);
+                modal.show();
+                
+                modalElement.addEventListener('hidden.bs.modal', function() {
+                    modalContainer.remove();
+                });
+            }
+        }
+        
+        // Editar instrumento
+// Editar instrumento - VERSIÓN SIMPLIFICADA Y SEGURA
+// Editar instrumento - VERSIÓN COMPLETA QUE LLENA EL FORMULARIO
+// Editar instrumento - VERSIÓN CON DEPURACIÓN DETALLADA
+function editInstrument(id) {
+    console.log("🔍 === INICIANDO editInstrument() ===");
+    console.log("ID recibido:", id, "Tipo:", typeof id);
+    
+    try {
+        // 1. Verificar que allInstruments existe
+        console.log("1. allInstruments existe?", Array.isArray(allInstruments));
+        console.log("2. Total instrumentos:", allInstruments ? allInstruments.length : "undefined");
+        
+        if (!allInstruments || !Array.isArray(allInstruments)) {
+            throw new Error("allInstruments no es un array válido");
+        }
+        
+        // 2. Buscar el instrumento
+        console.log("3. Buscando instrumento con ID:", id);
+        const instrument = allInstruments.find(i => {
+            console.log("  Comparando:", i.id, "con", id, "tipo i.id:", typeof i.id);
+            return i.id == id; // Usar == para comparar diferentes tipos (string vs number)
+        });
+        
+        console.log("4. Instrumento encontrado:", instrument);
+        
+        if (!instrument) {
+            console.error("❌ No se encontró instrumento con ID:", id);
+            console.log("Lista de IDs disponibles:", allInstruments.map(i => i.id));
+            throw new Error("Instrumento no encontrado con ID: " + id);
+        }
+        
+        // 3. Verificar que el formulario existe
+        console.log("5. Buscando formulario con ID 'formEditarInstrumento'");
+        const form = document.getElementById('formEditarInstrumento');
+        console.log("6. Formulario encontrado?", form !== null);
+        
+        if (!form) {
+            throw new Error("No se encontró el formulario con ID 'formEditarInstrumento'");
+        }
+        
+        // 4. Guardar el ID (VERIFICAR QUE EL ELEMENTO EXISTA)
+        console.log("7. Buscando campo 'editId'");
+        const editIdField = document.getElementById('editId');
+        if (editIdField) {
+            editIdField.value = id;
+            console.log("8. Campo editId establecido a:", id);
+        } else {
+            console.warn("⚠️ No se encontró campo 'editId', continuando...");
+        }
+        
+        // 5. Crear el HTML del formulario con cuidado
+        console.log("9. Creando HTML del formulario...");
+        
+        // Asegurarnos de que los valores no sean undefined
+        const nombre = instrument.nombre || '';
+        const categoria = instrument.categoria || '';
+        const estado = instrument.estado || 'DISPONIBLE';
+        const ubicacion = instrument.ubicacion || '';
+        const marca = instrument.marca || '';
+        const modelo = instrument.modelo || '';
+        const descripcion = instrument.descripcion || '';
+        
+        console.log("10. Valores a usar:");
+        console.log("  - Nombre:", nombre);
+        console.log("  - Categoría:", categoria);
+        console.log("  - Estado:", estado);
+        console.log("  - Ubicación:", ubicacion);
+        
+       const formHTML = `
+    <input type="hidden" id="editId" value="${id}">
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <label class="form-label">Nombre *</label>
+            <input type="text" class="form-control" id="editNombre"
+                   value="${nombre.replace(/"/g, '&quot;')}"
+                   required>
+        </div>
+        <div class="col-md-6 mb-3">
+            <label class="form-label">Categoría *</label>
+            <input type="text" class="form-control" id="editCategoria"
+                   value="${categoria.replace(/"/g, '&quot;')}"
+                   required>
+        </div>
+    </div>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Nombre *</label>
+                    <input type="text" class="form-control" id="editNombre" 
+                           value="${nombre.replace(/"/g, '&quot;')}" 
+                           required>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Categoría *</label>
+                    <input type="text" class="form-control" id="editCategoria" 
+                           value="${categoria.replace(/"/g, '&quot;')}" 
+                           required>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Estado *</label>
+                    <select class="form-select" id="editEstado" required>
+                        <option value="">Seleccionar estado</option>
+                        <option value="DISPONIBLE" ${estado === 'DISPONIBLE' ? 'selected' : ''}>DISPONIBLE</option>
+                        <option value="PRESTADO" ${estado === 'PRESTADO' ? 'selected' : ''}>PRESTADO</option>
+                        <option value="MANTENIMIENTO" ${estado === 'MANTENIMIENTO' ? 'selected' : ''}>MANTENIMIENTO</option>
+                    </select>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Ubicación *</label>
+                    <input type="text" class="form-control" id="editUbicacion" 
+                           value="${ubicacion.replace(/"/g, '&quot;')}" 
+                           required>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Marca</label>
+                    <input type="text" class="form-control" id="editMarca" 
+                           value="${marca.replace(/"/g, '&quot;')}">
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Modelo/Serial</label>
+                    <input type="text" class="form-control" id="editModelo" 
+                           value="${modelo.replace(/"/g, '&quot;')}">
+                </div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Descripción</label>
+                <textarea class="form-control" id="editDescripcion" rows="3">${descripcion.replace(/"/g, '&quot;')}</textarea>
+            </div>
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle me-2"></i>
+                Los campos marcados con * son obligatorios.
+            </div>
+        `;
+        
+        console.log("11. Insertando HTML en el formulario...");
+        form.innerHTML = formHTML;
+        console.log("✅ HTML insertado correctamente");
+        
+        // 6. Mostrar el modal
+        console.log("12. Buscando modal con ID 'modalEditar'");
+        const modalElement = document.getElementById('modalEditar');
+        console.log("13. Modal encontrado?", modalElement !== null);
+        
+        if (modalElement) {
+            const modal = new bootstrap.Modal(modalElement);
+            console.log("14. Mostrando modal...");
+            modal.show();
+            console.log("✅ Modal mostrado correctamente");
+            
+            // Limpiar el evento anterior y agregar nuevo
+            modalElement.removeEventListener('shown.bs.modal', focusFirstField);
+            function focusFirstField() {
+                const nombreField = document.getElementById('editNombre');
+                if (nombreField) {
+                    nombreField.focus();
+                    console.log("✅ Campo 'editNombre' enfocado");
+                }
+            }
+            modalElement.addEventListener('shown.bs.modal', focusFirstField);
+            
+        } else {
+            throw new Error("No se encontró el modal con ID 'modalEditar'");
+        }
+        
+        console.log("🎉 === editInstrument() COMPLETADO CON ÉXITO ===");
+        
+    } catch (error) {
+        console.error("💥 === ERROR EN editInstrument() ===");
+        console.error("Mensaje:", error.message);
+        console.error("Stack:", error.stack);
+        console.error("Estado actual:");
+        console.error("- allInstruments:", allInstruments);
+        console.error("- ID buscado:", id);
+        
+        // Mostrar alerta más informativa
+        showAlert(`Error al cargar el formulario: ${error.message}`, "danger");
+    }
+}
+
+        
+        // Actualizar instrumento con validación de roles
+        // Actualizar instrumento - VERSIÓN CORREGIDA
+// Actualizar instrumento - VERSIÓN SIMPLIFICADA
+// Actualizar instrumento - VERSIÓN FUNCIONAL
+async function actualizarInstrumento() {
+    console.log("💾 actualizarInstrumento() llamada");
+    
+    const id = document.getElementById('editId').value;
+    console.log("📝 ID a actualizar:", id);
+    
+    // Recoger todos los valores
+    const instrumento = {
+        nombre: document.getElementById('editNombre').value,
+        categoria: document.getElementById('editCategoria').value,
+        estado: document.getElementById('editEstado').value,
+        ubicacion: document.getElementById('editUbicacion').value,
+        descripcion: document.getElementById('editDescripcion').value || '',
+        marca: document.getElementById('editMarca').value || '',
+        modelo: document.getElementById('editModelo').value || ''
+    };
+    
+    console.log("📦 Datos a enviar:", instrumento);
+    
+    // Validaciones
+    if (!instrumento.nombre || !instrumento.categoria || !instrumento.estado || !instrumento.ubicacion) {
+        showAlert("Por favor, completa todos los campos obligatorios", "warning");
+        return;
+    }
+    
+    if (currentUserRole === 'ASISTENTE' && instrumento.estado === 'MANTENIMIENTO') {
+        showAlert("Los asistentes no pueden poner instrumentos en mantenimiento", "warning");
+        return;
+    }
+    
+    try {
+        console.log(`📡 Enviando PUT a /api/instrumentos/${id}`);
+        
+        const response = await fetch(`/api/instrumentos/${id}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(instrumento)
+        });
+        
+        console.log("📨 Status de respuesta:", response.status);
+        
+        if (response.ok) {
+            const data = await response.json();
+            console.log("✅ Respuesta del servidor:", data);
+            
+            // Cerrar modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('modalEditar'));
+            modal.hide();
+            
+            // Mostrar mensaje de éxito
+            showAlert("¡Instrumento actualizado correctamente!", "success");
+            
+            // Recargar datos después de 1 segundo
+            setTimeout(() => {
+                loadInstruments();
+            }, 1000);
+            
+        } else {
+            const errorData = await response.json().catch(() => ({}));
+            console.error("❌ Error del servidor:", errorData);
+            showAlert("Error: " + (errorData.error || "Error desconocido"), "danger");
+        }
+        
+    } catch (error) {
+        console.error("💥 Error en fetch:", error);
+        showAlert("Error de conexión: " + error.message, "danger");
+    }
+}
+
+        // Eliminar instrumento
+        async function deleteInstrument(id) {
+            if (!confirm('¿Estás seguro de eliminar este instrumento?')) return;
+            
+            try {
+                const response = await fetch(`/api/instrumentos/${id}`, {
+                    method: 'DELETE'
+                });
+                
+                if (response.ok) {
+                    showAlert('Instrumento eliminado exitosamente', 'success');
+                    loadInstruments();
+                } else {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Error al eliminar instrumento');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showAlert(error.message || 'Error al eliminar instrumento', 'danger');
+            }
+        }
+        
+        // Importar Excel
+        async function importarExcel() {
+            const fileInput = document.getElementById('excelFile');
+            if (!fileInput.files.length) {
+                showAlert('Selecciona un archivo', 'warning');
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('excelFile', fileInput.files[0]);
+            
+            try {
+                const response = await fetch('/cargar-instrumentos', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (response.ok) {
+                    showAlert('Archivo importado exitosamente', 'success');
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('modalImportar'));
+                    modal.hide();
+                    loadInstruments();
+                } else {
+                    throw new Error('Error al importar archivo');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showAlert('Error al importar archivo', 'danger');
+            }
+        }
+        
+        // Descargar Excel
+        function descargarExcel() {
+            window.location.href = '/descargar-instrumentos';
+        }
+        
+        // Refrescar tabla
+        function refreshTable() {
+            loadInstruments();
+            showAlert('Datos actualizados', 'info');
+        }
+        
+        // Mostrar alerta
+        function showAlert(message, type) {
+            const alertHTML = `
+                <div class="alert alert-${type} alert-dismissible fade show position-fixed top-0 end-0 m-3" style="z-index: 9999;">
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+            
+            const alertContainer = document.createElement('div');
+            alertContainer.innerHTML = alertHTML;
+            document.body.appendChild(alertContainer);
+            
+            setTimeout(() => {
+                alertContainer.remove();
+            }, 5000);
+        }
+        
+        // Ocultar botones de acciones según rol
+        function ajustarInterfazPorRol() {
+            const userRole = currentUserRole;
+            
+            if (userRole === 'AUDITOR') {
+                const btnAgregar = document.querySelector('button[data-bs-target="#modalAgregar"]');
+                const btnImportar = document.querySelector('button[data-bs-target="#modalImportar"]');
+                const linkAgregar = document.querySelector('a[href="#modalAgregar"]');
+                
+                if (btnAgregar) btnAgregar.style.display = 'none';
+                if (btnImportar) btnImportar.style.display = 'none';
+                if (linkAgregar) linkAgregar.style.display = 'none';
+                
+                document.querySelectorAll('.btn-outline-danger').forEach(btn => {
+                    btn.style.display = 'none';
+                });
+            } else if (userRole === 'ASISTENTE') {
+                document.querySelectorAll('.btn-outline-danger').forEach(btn => {
+                    btn.style.display = 'none';
+                });
+            }
+        }
+        
+        // Ejecutar ajustes de interfaz
+        setTimeout(ajustarInterfazPorRol, 1000);
+    </script>
+</body>
+<!-- Botón de prueba MANUAL -->
+<div style="position: fixed; top: 10px; right: 10px; z-index: 9999;">
+    <button onclick="testEdit()" class="btn btn-success">
+        <i class="bi bi-play-circle"></i> Probar Edición
+    </button>
+</div>
+
+<script>
+function testEdit() {
+    console.log("=== PRUEBA MANUAL ===");
+    
+    // Verificar que la función existe
+    console.log("editInstrument es función:", typeof editInstrument);
+    
+    // Llamar a la función con un ID de prueba
+    if (allInstruments && allInstruments.length > 0) {
+        editInstrument(allInstruments[0].id);
+    } else {
+        // Forzar una prueba
+        editInstrument(1);
+    }
+}
+</script>
+</html>

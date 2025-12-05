@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel Administrador</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        .card-link {
+            text-decoration: none;
+            color: inherit;
+        }
+        .card-link:hover .card {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-dark bg-dark">
+        <div class="container">
+            <span class="navbar-brand">Panel Administrador</span>
+            <div>
+                <span class="text-light me-3">Bienvenido, <span id="userName"></span></span>
+                <a href="/logout" class="btn btn-outline-light">Cerrar Sesión</a>
+            </div>
+        </div>
+    </nav>
+    
+    <div class="container mt-4">
+        <h1>Panel de Administración</h1>
+        <p class="text-muted">Tienes control total sobre el sistema</p>
+        
+        <div class="row mt-4">
+            <div class="col-md-4 mb-4">
+                <a href="/instrumentos.html" class="card-link">
+                    <div class="card border-primary">
+                        <div class="card-body text-center">
+                            <i class="bi bi-tools text-primary" style="font-size: 2rem;"></i>
+                            <h5 class="card-title mt-3">Gestión de Instrumentos</h5>
+                            <p class="card-text">Ver, crear, editar y eliminar instrumentos</p>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            
+            <div class="col-md-4 mb-4">
+                <a href="/busqueda.html" class="card-link">
+                    <div class="card border-success">
+                        <div class="card-body text-center">
+                            <i class="bi bi-search text-success" style="font-size: 2rem;"></i>
+                            <h5 class="card-title mt-3">Búsqueda Avanzada</h5>
+                            <p class="card-text">Buscar instrumentos con filtros avanzados</p>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            
+            <div class="col-md-4 mb-4">
+                <a href="#" onclick="cargarGestionUsuarios()" class="card-link">
+                    <div class="card border-warning">
+                        <div class="card-body text-center">
+                            <i class="bi bi-people text-warning" style="font-size: 2rem;"></i>
+                            <h5 class="card-title mt-3">Gestión de Usuarios</h5>
+                            <p class="card-text">Administrar usuarios y permisos</p>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        </div>
+        
+        <!-- Sección para gestión de usuarios -->
+        <div id="gestionUsuarios" class="mt-4" style="display: none;">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Gestión de Usuarios</h5>
+                </div>
+                <div class="card-body">
+                    <button class="btn btn-primary mb-3" onclick="mostrarModalNuevoUsuario()">
+                        <i class="bi bi-plus-circle"></i> Nuevo Usuario
+                    </button>
+                    <div class="table-responsive">
+                        <table class="table" id="tablaUsuarios">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Nombre</th>
+                                    <th>Correo</th>
+                                    <th>Rol</th>
+                                    <th>Fecha Registro</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbodyUsuarios">
+                                <!-- Usuarios se cargarán aquí -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal para nuevo usuario -->
+    <div class="modal fade" id="modalNuevoUsuario" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Nuevo Usuario</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="formNuevoUsuario">
+                        <div class="mb-3">
+                            <label class="form-label">Nombre</label>
+                            <input type="text" class="form-control" id="nombreUsuario" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Correo</label>
+                            <input type="email" class="form-control" id="correoUsuario" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Contraseña</label>
+                            <input type="password" class="form-control" id="passwordUsuario" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Rol</label>
+                            <select class="form-control" id="rolUsuario" required>
+                                <option value="ADMIN">Administrador</option>
+                                <option value="ASISTENTE">Asistente</option>
+                                <option value="AUDITOR">Auditor</option>
+                            </select>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" onclick="crearUsuario()">Crear Usuario</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Cargar información del usuario
+        fetch('/api/usuario-actual')
+            .then(res => res.json())
+            .then(user => {
+                document.getElementById('userName').textContent = user.nombre;
+            })
+            .catch(() => window.location.href = '/login.html');
+        
+        // Cargar gestión de usuarios
+      // Cargar gestión de usuarios
+async function cargarGestionUsuarios() {
+    const seccion = document.getElementById('gestionUsuarios');
+    seccion.style.display = 'block';
+    
+    try {
+        console.log('📡 Solicitando usuarios...');
+        
+        // Verificar que estamos autenticados primero
+        const token = document.cookie.replace(/(?:(?:^|.*;\s*)token\s*=\s*([^;]*).*$)|^.*$/, "$1");
+        
+        const response = await fetch('/api/usuarios', {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                // Si usas tokens JWT, descomenta esta línea:
+                // 'Authorization': `Bearer ${token}`
+            },
+            credentials: 'include' // Importante para enviar cookies de sesión
+        });
+        
+        console.log('📨 Status de respuesta:', response.status);
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('❌ Error en respuesta:', errorText);
+            
+            if (response.status === 403) {
+                alert('No tienes permisos para ver usuarios. Solo los administradores pueden acceder a esta función.');
+                return;
+            }
+            
+            throw new Error(`Error ${response.status}: ${errorText}`);
+        }
+        
+        const usuarios = await response.json();
+        console.log(`✅ Usuarios recibidos:`, usuarios);
+        
+        const tbody = document.getElementById('tbodyUsuarios');
+        tbody.innerHTML = '';
+        
+        if (usuarios.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="6" class="text-center py-4">
+                        <i class="bi bi-people display-4 text-muted"></i>
+                        <p class="mt-2 text-muted">No hay usuarios registrados</p>
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+        
+        usuarios.forEach(usuario => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${usuario.id}</td>
+                <td>${usuario.nombre}</td>
+                <td>${usuario.correo}</td>
+                <td>
+                    <span class="badge ${
+                        usuario.rol === 'ADMIN' ? 'bg-danger' : 
+                        usuario.rol === 'ASISTENTE' ? 'bg-success' : 
+                        'bg-warning'
+                    }">
+                        ${usuario.rol}
+                    </span>
+                </td>
+                <td>${new Date(usuario.created_at).toLocaleDateString('es-ES', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                })}</td>
+                <td>
+                    <button class="btn btn-sm btn-warning" onclick="editarUsuario(${usuario.id})" title="Editar">
+                        <i class="bi bi-pencil"></i>
+                    </button>
+                    <button class="btn btn-sm btn-danger" onclick="eliminarUsuario(${usuario.id})" title="Eliminar">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(row);
+        });
+        
+    } catch (error) {
+        console.error('❌ Error cargando usuarios:', error);
+        alert(`Error al cargar usuarios: ${error.message}\n\nPor favor, verifica que estás autenticado como administrador.`);
+    }
+}
+        function mostrarModalNuevoUsuario() {
+            document.getElementById('formNuevoUsuario').reset();
+            const modal = new bootstrap.Modal(document.getElementById('modalNuevoUsuario'));
+            modal.show();
+        }
+        
+        async function crearUsuario() {
+            const usuario = {
+                nombre: document.getElementById('nombreUsuario').value,
+                correo: document.getElementById('correoUsuario').value,
+                password: document.getElementById('passwordUsuario').value,
+                rol: document.getElementById('rolUsuario').value
+            };
+            
+            try {
+                const response = await fetch('/api/usuarios', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(usuario)
+                });
+                
+                if (response.ok) {
+                    alert('Usuario creado exitosamente');
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('modalNuevoUsuario'));
+                    modal.hide();
+                    cargarGestionUsuarios();
+                } else {
+                    throw new Error('Error al crear usuario');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error al crear usuario');
+            }
+        }
+        
+        async function eliminarUsuario(id) {
+            if (!confirm('¿Estás seguro de eliminar este usuario?')) return;
+            
+            try {
+                const response = await fetch(`/api/usuarios/${id}`, {
+                    method: 'DELETE'
+                });
+                
+                if (response.ok) {
+                    alert('Usuario eliminado');
+                    cargarGestionUsuarios();
+                } else {
+                    throw new Error('Error al eliminar usuario');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error al eliminar usuario');
+            }
+        }
+        // Función para editar usuario
+async function editarUsuario(id) {
+    console.log('📝 Editando usuario ID:', id);
+    
+    try {
+        // Primero buscar el usuario actual
+        const response = await fetch(`/api/usuarios`);
+        const usuarios = await response.json();
+        const usuario = usuarios.find(u => u.id === id);
+        
+        if (!usuario) {
+            alert('Usuario no encontrado');
+            return;
+        }
+        
+        // Llenar el formulario
+        document.getElementById('editUsuarioId').value = usuario.id;
+        document.getElementById('editUsuarioNombre').value = usuario.nombre;
+        document.getElementById('editUsuarioCorreo').value = usuario.correo;
+        document.getElementById('editUsuarioRol').value = usuario.rol;
+        
+        // Mostrar modal
+        const modal = new bootstrap.Modal(document.getElementById('modalEditarUsuario'));
+        modal.show();
+        
+    } catch (error) {
+        console.error('❌ Error al cargar usuario:', error);
+        alert('Error al cargar información del usuario');
+    }
+}
+
+// Función para guardar usuario editado
+async function guardarUsuarioEditado() {
+    const id = document.getElementById('editUsuarioId').value;
+    
+    const usuario = {
+        nombre: document.getElementById('editUsuarioNombre').value,
+        correo: document.getElementById('editUsuarioCorreo').value,
+        rol: document.getElementById('editUsuarioRol').value
+    };
+    
+    // Validación básica
+    if (!usuario.nombre || !usuario.correo || !usuario.rol) {
+        alert('Por favor, complete todos los campos');
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/usuarios/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(usuario)
+        });
+        
+        if (response.ok) {
+            const result = await response.json();
+            console.log('✅ Usuario actualizado:', result);
+            
+            // Cerrar modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('modalEditarUsuario'));
+            modal.hide();
+            
+            // Recargar tabla
+            cargarGestionUsuarios();
+            
+            // Mostrar mensaje
+            alert('Usuario actualizado correctamente');
+            
+        } else {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Error al actualizar usuario');
+        }
+        
+    } catch (error) {
+        console.error('❌ Error actualizando usuario:', error);
+        alert('Error: ' + error.message);
+    }
+}
+
+// Función para cambiar contraseña (opcional)
+async function cambiarPasswordUsuario(id) {
+    document.getElementById('passwordUsuarioId').value = id;
+    
+    const modal = new bootstrap.Modal(document.getElementById('modalCambiarPassword'));
+    modal.show();
+}
+
+async function cambiarPassword() {
+    const id = document.getElementById('passwordUsuarioId').value;
+    const nuevaPassword = document.getElementById('nuevaPassword').value;
+    const confirmarPassword = document.getElementById('confirmarPassword').value;
+    
+    // Validaciones
+    if (nuevaPassword.length < 6) {
+        alert('La contraseña debe tener al menos 6 caracteres');
+        return;
+    }
+    
+    if (nuevaPassword !== confirmarPassword) {
+        alert('Las contraseñas no coinciden');
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/usuarios/${id}/password`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ password: nuevaPassword })
+        });
+        
+        if (response.ok) {
+            // Cerrar modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('modalCambiarPassword'));
+            modal.hide();
+            
+            // Limpiar formulario
+            document.getElementById('formCambiarPassword').reset();
+            
+            alert('Contraseña cambiada correctamente');
+            
+        } else {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Error al cambiar contraseña');
+        }
+        
+    } catch (error) {
+        console.error('❌ Error cambiando contraseña:', error);
+        alert('Error: ' + error.message);
+    }
+}
+    </script>
+    <!-- Modal para editar usuario -->
+<div class="modal fade" id="modalEditarUsuario" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-pencil-square"></i> Editar Usuario
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formEditarUsuario">
+                    <input type="hidden" id="editUsuarioId">
+                    <div class="mb-3">
+                        <label class="form-label">Nombre</label>
+                        <input type="text" class="form-control" id="editUsuarioNombre" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Correo</label>
+                        <input type="email" class="form-control" id="editUsuarioCorreo" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Rol</label>
+                        <select class="form-control" id="editUsuarioRol" required>
+                            <option value="ADMIN">Administrador</option>
+                            <option value="ASISTENTE">Asistente</option>
+                            <option value="AUDITOR">Auditor</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-warning text-white" onclick="guardarUsuarioEditado()">
+                    <i class="bi bi-save"></i> Guardar Cambios
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para cambiar contraseña (opcional) -->
+<div class="modal fade" id="modalCambiarPassword" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-key"></i> Cambiar Contraseña
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formCambiarPassword">
+                    <input type="hidden" id="passwordUsuarioId">
+                    <div class="mb-3">
+                        <label class="form-label">Nueva Contraseña</label>
+                        <input type="password" class="form-control" id="nuevaPassword" required minlength="6">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Confirmar Contraseña</label>
+                        <input type="password" class="form-control" id="confirmarPassword" required>
+                    </div>
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> La contraseña debe tener al menos 6 caracteres
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-info text-white" onclick="cambiarPassword()">
+                    <i class="bi bi-check-circle"></i> Cambiar Contraseña
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>
